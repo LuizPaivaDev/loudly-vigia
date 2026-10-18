@@ -69,6 +69,10 @@ async function avisa(content) {
   }
   // alvo de teste ausente nesta rodada: sai do estado sem aviso
   if (!process.env.ALVO_TESTE && estado.teste) { delete estado.teste; msgs.push('estado: Alvo de teste removido'); }
+  if (!estado.vivo || agora - new Date(estado.vivo).getTime() >= 7 * 86400000) {
+    estado.vivo = new Date(agora).toISOString();
+    if (!msgs.length) msgs.push('estado: batimento semanal');
+  }
   if (JSON.stringify(estado) !== antes) {
     fs.writeFileSync(ARQ, JSON.stringify(estado, null, 2) + '\n');
     fs.writeFileSync('.msg-commit', msgs.join('; ') || 'estado: atualizado');
