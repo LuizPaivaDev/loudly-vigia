@@ -1,0 +1,36 @@
+name: vigia
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      alvo_teste:
+        description: 'URL extra que deve falhar (so para teste)'
+        required: false
+        default: ''
+permissions:
+  contents: write
+concurrency:
+  group: vigia
+  cancel-in-progress: false
+jobs:
+  vigia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vigiar
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          ALVO_TESTE: ${{ github.event.inputs.alvo_teste }}
+        run: node vigia.js
+      - name: Salvar estado
+        run: |
+          git config user.name "vigia"
+          git config user.email "vigia@users.noreply.github.com"
+          git add estado.json
+          if ! git diff --cached --quiet; then
+            git commit -m "$(cat .msg-commit 2>/dev/null || echo 'estado: atualizado')"
+            git pull --rebase -q || true
+            git push
+          fi
